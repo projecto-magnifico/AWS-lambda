@@ -1,0 +1,31 @@
+{
+  "name": "project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "projectUtils.js",
+  "scripts": {
+    "test": "mocha ./spec/*"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^2.5.0",
+    "aws-sdk": "^2.138.0",
+    "axios": "^0.16.2",
+    "bluebird": "^3.5.1",
+    "chai": "^4.1.2",
+    "combinatorial": "^1.0.3",
+    "es6-promisify": "^5.0.0",
+    "express": "^4.16.2",
+    "fs": "0.0.1-security",
+    "fs-extra": "^4.0.2",
+    "html-to-text": "^3.3.0",
+    "leven": "^2.1.0",
+    "lodash": "^4.17.4",
+    "mocha": "^4.0.1",
+    "power-set-x": "^1.5.0",
+    "string-similarity": "^1.2.0",
+    "underscore": "^1.8.3",
+    "watson-developer-cloud": "^2.40.0"
+  }
+}
