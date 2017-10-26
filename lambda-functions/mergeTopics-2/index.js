@@ -19,4 +19,12 @@ const mergeTopicsWithThreads = (topics, threads) => {
     return {insertionSchema, newThreadSchema};
 };
 
+const fetchTopicsAndMerge = (event, context, callback) => {
+    const lastCreatedFile = event.Records[0].s3.object.key;
+    s3.getObject({Bucket: bucket, Key: lastCreatedFile}, (err, topics) => {
+        if (err) console.error('ERROR', err);
+        console.log(topics);
+    })
+}
+
 module.exports = {mergeTopicsWithThreads};
