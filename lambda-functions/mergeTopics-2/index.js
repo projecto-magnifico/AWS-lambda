@@ -12,3 +12,4 @@ const mergeTopicsWithThreads = (topics) => {
     //return insertionSchema;
 };
 
+module.exports = {mergeTopicsWithThreads};
