@@ -31,10 +31,10 @@ const prepareTopics = () => {
         
         addDataForWatson(groupedArticles).then(res => {
             const fileName = new Date().toISOString(); 
-            // putObjectToS3('topic-storage', `${fileName}.json`, JSON.stringify(res, null, 2))
-            fs.appendFile('threads.json', JSON.stringify(res,null,2), "utf8", (err) => {
-                        if (err) throw err;
-           })
+            putObjectToS3('topic-storage', `${fileName}.json`, JSON.stringify(res, null, 2))
+            // fs.appendFile('threads.json', JSON.stringify(res,null,2), "utf8", (err) => {
+            //             if (err) throw err;
+            // })
         })
         .catch(err => {
             if (err) console.log("err");

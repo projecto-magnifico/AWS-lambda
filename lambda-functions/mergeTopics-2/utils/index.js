@@ -47,7 +47,8 @@ const formulateInsertionSchema = ( topicKeywordSets, threadKeywordSets ) => {
                     return _.contains(difference, wordObject.text);
                 });
                 insertionSchema.push({
-                    target: threadKeywords[0].id,
+                    targetThread: threadKeywords[0].id,
+                    fromTopic: i,
                     boostKeywords : intersectedWordObjects,
                     newKeywords : differentWordObjects
                 });
