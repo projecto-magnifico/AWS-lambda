@@ -7,7 +7,9 @@ const pgp = require('pg-promise');
 const bucket = 'topic-storage';
 const dbConfig = require('./config/db.config.js');
 const db = pgp(dbConfig);
-const keywordDecay = 0.75;
+const keywordDecay = 0.6;
+const keywordsThreshold = 0.12;
+const articlesThreshold = 174;
 const threadDecay = 0.5;
 
 const mergeTopicsWithThreads = (topics, threadKeywords) => {
@@ -70,11 +72,19 @@ const fetchTopicsAndMerge = (event, context, callback) => {
             })
         })
         .then(() => {
+            //decay according to modifier
             db.none('UPDATE articles SET age = age + 1;')
                 .catch(console.error);
             db.none('UPDATE threads SET score = score * $1;', [threadDecay])
                 .catch(console.error);
             db.none('UPDATE keywords SET relevance = relevance * $1', [keywordDecay])
+                .catch(console.error);
+        })
+        .then(() => {
+            //delete according to threshold
+            db.none('DELETE FROM articles WHERE age >= $1;', articlesThreshold)
+                .catch(console.error);
+            db.none('DELETE FROM keywords WHERE relevance <= $1;', keywordsThreshold)
                 .catch(console.error);
         })
         .catch(console.error);
