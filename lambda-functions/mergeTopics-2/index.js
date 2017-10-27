@@ -7,7 +7,8 @@ const pgp = require('pg-promise');
 const bucket = 'topic-storage';
 const dbConfig = require('./config/db.config.js');
 const db = pgp(dbConfig);
-
+const keywordDecay = 0.75;
+const threadDecay = 0.5;
 
 const mergeTopicsWithThreads = (topics, threadKeywords) => {
     const allTopicsKeywords = Object.keys(topics).map(topic => topics[topic].keywords);
@@ -59,8 +60,6 @@ const fetchTopicsAndMerge = (event, context, callback) => {
                                     db.none('INSERT INTO articles (thread_id, title, description, url, age, source_id, img_url) VALUES ($1, $2, $3, $4, $5, $6, $7);' [thread.thread_id, aritcle.title, aritcle.description, aritcle.url, aritcle.age, source.source_id, aritcle.urlToImage])
                                 })
                                 .catch(console.error);
-                        
-                                
                             })
                         topics[i].keywords.forEach(keyword => {
                             db.none('INSERT INTO keywords (word, thread_id, relevance) VALUES ($1, $2, $3)', [keyword.text, thread.thread_id, keyword.relevance])
@@ -71,8 +70,14 @@ const fetchTopicsAndMerge = (event, context, callback) => {
             })
         })
         .then(() => {
-            db.any('')
+            db.none('UPDATE articles SET age = age + 1;')
+                .catch(console.error);
+            db.none('UPDATE threads SET score = score * $1;', [threadDecay])
+                .catch(console.error);
+            db.none('UPDATE keywords SET relevance = relevance * $1', [keywordDecay])
+                .catch(console.error);
         })
+        .catch(console.error);
 }
 
 
