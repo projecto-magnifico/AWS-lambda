@@ -14,11 +14,11 @@ functions:
     handler: handler.prepareTopics
     events:
       - schedule: rate(2 hours)
-  mergeTopicsWithThreads:
-    handler: handler.mergeTopicsWithThreads
+  fetchTopicsAndMerge:
+    handler: handler.fetchTopicsAndMerge
     events:
       - s3:
         bucket: topic-storage;
         event: s3:ObjectCreated:*
-          rules:
-            - suffix: .json
+        rules:
+          - suffix: .json

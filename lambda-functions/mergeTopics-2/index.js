@@ -29,6 +29,7 @@ const fetchTopicsAndMerge = (event, context, callback) => {
             s3.getObject({Bucket: bucket, Key: lastCreatedFile}, (err, topics) => {
                 if (err) reject(err);
             const {insertionSchema, newThreadSchema} = mergeTopicsWithThreads(topics, threadKeywords);
+            if (insertionSchema.length === 0) return {newThreadSchema, topics};
                 insertionSchema.forEach(topic => {
                     const threadScore = topics[topic.targetThread].score;
                     db.none('UPDATE threads SET score = score + $1 WHERE thread_id = $2;', [threadScore, topic.targetThread])
@@ -45,8 +46,11 @@ const fetchTopicsAndMerge = (event, context, callback) => {
                         .catch(console.error);
                     });
                     topic.articles.forEach(article => {
-                        db.none('INSERT INTO articles (thread_id, title, description, url, age, source_id, img_url) VALUES ($1, $2, $3, $4, $5, $6, $7);' [topic.targetThread, article.title, article.description, article.url, article.age, ####, article.urlToImage])
-                            .catch(console.error);
+                        db.one('SELECT source_id FROM sources WHERE name = $1', article.source)
+                            .then(source => {
+                                db.none('INSERT INTO articles (thread_id, title, description, url, age, source_id, img_url) VALUES ($1, $2, $3, $4, $5, $6, $7);' [topic.targetThread, article.title, article.description, article.url, article.age, source.source_id, article.urlToImage])
+                                    .catch(console.error);
+                            })                        
                     });
                     return {newThreadSchema, topics};
                 });
@@ -59,7 +63,7 @@ const fetchTopicsAndMerge = (event, context, callback) => {
                         topics[i].articles.forEach(article => {
                             db.one('SELECT source_id FROM sources WHERE name = $1', article.source)
                                 .then((source) => {
-                                    db.none('INSERT INTO articles (thread_id, title, description, url, age, source_id, img_url) VALUES ($1, $2, $3, $4, $5, $6, $7);' [thread.thread_id, aritcle.title, aritcle.description, aritcle.url, aritcle.age, source.source_id, aritcle.urlToImage])
+                                    db.none('INSERT INTO articles (thread_id, title, description, url, age, source_id, img_url) VALUES ($1, $2, $3, $4, $5, $6, $7);' [thread.thread_id, article.title, article.description, article.url, article.age, source.source_id, article.urlToImage])
                                 })
                                 .catch(console.error);
                             })
@@ -92,4 +96,4 @@ const fetchTopicsAndMerge = (event, context, callback) => {
 
 
 
-module.exports = {mergeTopicsWithThreads};
+module.exports = {fetchTopicsAndMerge};

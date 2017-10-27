@@ -4,7 +4,8 @@
   "description": "",
   "main": "projectUtils.js",
   "scripts": {
-    "test": "mocha ./lambda-functions/mergeTopics-2/spec/*"
+    "test": "npm run seed:test && NODE_ENV=test mocha ./spec/testDB/mergeTopics.spec.js",
+    "seed:test": "psql -f ./seed/seed.sql"
   },
   "author": "",
   "license": "ISC",
