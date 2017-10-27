@@ -58,7 +58,12 @@ const fetchTopicsAndMerge = (event, context, callback) => {
                                 .then((source) => {
                                     db.none('INSERT INTO articles (thread_id, title, description, url, age, source_id, img_url) VALUES ($1, $2, $3, $4, $5, $6, $7);' [thread.thread_id, aritcle.title, aritcle.description, aritcle.url, aritcle.age, source.source_id, aritcle.urlToImage])
                                 })
-
+                                .catch(console.error);
+                        
+                                
+                            })
+                        topics[i].keywords.forEach(keyword => {
+                            db.none('INSERT INTO keywords (word, thread_id, relevance) VALUES ($1, $2, $3)', [keyword.text, thread.thread_id, keyword.relevance])
                         })
 
                     })
