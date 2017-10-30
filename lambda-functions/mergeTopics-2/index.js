@@ -5,9 +5,8 @@ const AWS = require('aws-sdk');
 const s3 = new AWS.S3();
 const pgp = require('pg-promise');
 const bucket = 'topic-storage';
-const dbConfig = require('./config/db.config.js');
-const db = pgp(dbConfig);
-const keywordDecay = 0.6;
+const dbConfig = require('./config');
+const db = pgp(dbConfig)({promiseLib: Promise});const keywordDecay = 0.6;
 const keywordsThreshold = 0.12;
 const articlesThreshold = 174;
 const threadDecay = 0.5;
@@ -22,9 +21,13 @@ const mergeTopicsWithThreads = (topics, threadKeywords) => {
     return {insertionSchema, newThreadSchema};
 };
 
+const getKeywords = () => {
+    return db.any('SELECT word, thread_id FROM KEYWORDS;')
+}
+
 const fetchTopicsAndMerge = (event, context, callback) => {
     const lastCreatedFile = event.Records[0].s3.object.key;
-    db.any('SELECT word, thread_id FROM KEYWORDS;')
+    getKeywords()
         .then(threadKeywords => {
             s3.getObject({Bucket: bucket, Key: lastCreatedFile}, (err, topics) => {
                 if (err) reject(err);
@@ -96,4 +99,4 @@ const fetchTopicsAndMerge = (event, context, callback) => {
 
 
 
-module.exports = {fetchTopicsAndMerge};
+module.exports = {fetchTopicsAndMerge, getKeywords};

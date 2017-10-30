@@ -5,7 +5,7 @@
   "main": "projectUtils.js",
   "scripts": {
     "test": "npm run seed:test && NODE_ENV=test mocha ./spec/testDB/mergeTopics.spec.js",
-    "seed:test": "psql -f ./seed/seed.sql"
+    "seed:test": "psql -f ./spec/testDB/seed.sql"
   },
   "author": "",
   "license": "ISC",
@@ -27,7 +27,7 @@
     "leven": "^2.1.0",
     "lodash": "^4.17.4",
     "mocha": "^4.0.1",
-    "pg-promise": "^7.0.3",
+    "pg-promise": "^7.1.0",
     "power-set-x": "^1.5.0",
     "string-similarity": "^1.2.0",
     "underscore": "^1.8.3",

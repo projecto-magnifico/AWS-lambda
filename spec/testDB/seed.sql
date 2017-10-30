@@ -1,6 +1,8 @@
 DROP DATABASE IF EXISTS delphi_test; 
 CREATE DATABASE delphi_test; 
 
+\c delphi_test;
+
 CREATE TABLE threads (
     thread_id SERIAL PRIMARY KEY,
     name VARCHAR,
@@ -52,22 +54,3 @@ CREATE TABLE snapshots (
     snap_date DATE DEFAULT NOW(),
     snap_time TIME DEFAULT NOW()
 );
-
-INSERT INTO sources (name) VALUES
-('abc-news-au'),
-('al-jazeera-english'),
-('associated-press'),
-('bbc-news'),
-('cnn'),
-('the-guardian-uk'),
-('the-huffington-post'),
-('independent'),
-('metro'),
-('mirror'),
-('newsweek'),
-('new-york-magazine'),
-('the-new-york-times'),
-('reuters'),
-('the-telegraph'),
-('usa-today'),
-('the-washington-post');
