@@ -1,4 +1,6 @@
-const { fetchTopicsAndMerge, getKeywords, updateThreads, boostKeywords, addArticles} = require('../../lambda-functions/mergeTopics-2/index');
+
+const { fetchTopicsAndMerge, getKeywords, updateThreads, boostKeywords, addNewKeywords, addNewThread, addArticles} = require('../../lambda-functions/mergeTopics-2/index');
+
 const expect = require('chai').expect;
 const dbConfig = require('../../lambda-functions/mergeTopics-2/config');
 const pgp = require('pg-promise')({ promiseLib: Promise });
@@ -104,4 +106,30 @@ describe('#mergetopicsWithThreads', () => {
     //             })
     //     });
     // });
+
+    describe('#addNewKeywords', () => {
+        before(() => {
+            const keywords = [{text: 'James', relevance: 0.8}, {text: "Testing", relevance: 0.8}]
+            return addNewKeywords(keywords, 1)
+        })
+        it('adds new keywords to an existing thread', () => {
+            return db.any("SELECT * FROM keywords WHERE word = 'James'")
+                .then(data => {
+                    expect(data[0].word).to.equal('James');
+                    expect(data[0].relevance).to.equal('0.8');
+                })
+        });
+    });
+
+    describe('#addNewThread', () => {
+        it('adds new thread to thread table and returns new thread', () => {
+            return addNewThread(12)
+                .then(thread => {
+                    expect(thread.thread_id).to.equal(2);
+                })
+
+        });
+    });
+
+
 });

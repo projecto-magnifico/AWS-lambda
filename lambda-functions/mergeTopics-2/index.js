@@ -36,6 +36,16 @@ const boostKeywords = (keywords, targetThread) => {
         .catch(console.error)
     }))
 }
+const addNewKeywords = (keywords, targetThread) => {
+    return Promise.all(keywords.map(word => {
+        return db.none('INSERT INTO keywords (word, thread_id, relevance) VALUES ($1, $2, $3);', [word.text, targetThread, word.relevance])
+        .catch(console.error); 
+    }))
+}
+
+const addNewThread = (score) => {
+    return db.one('INSERT INTO threads (score) VALUES ($1) RETURNING thread_id;', score)
+}
 
 // const addArticles = (articles, targetThread) => {
 //     return Promise.all(articles.map(article => {
@@ -84,7 +94,7 @@ const fetchTopicsAndMerge = (event, context, callback) => {
         })
         .then(({newThreadSchema, topics}) => {
             newThreadSchema.forEach(i => {
-                db.one('INSERT INTO threads (score) VALUES ($1) RETURNING thread_id;', topics[i])
+                db.one('INSERT INTO threads (score) VALUES ($1) RETURNING thread_id;', topics[i].score)
                     .then((thread) => {
                         topics[i].articles.forEach(article => {
                             db.one('SELECT source_id FROM sources WHERE name = $1', article.source)
@@ -122,4 +132,4 @@ const fetchTopicsAndMerge = (event, context, callback) => {
 
 
 
-module.exports = {fetchTopicsAndMerge, getKeywords, updateThreads, boostKeywords, addArticles};
+module.exports = {fetchTopicsAndMerge, getKeywords, updateThreads, boostKeywords, addNewKeywords, addNewThread, addArticles};
