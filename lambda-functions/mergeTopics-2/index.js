@@ -30,6 +30,13 @@ const updateThreads = (threadScore, targetThread) => {
     return db.none('UPDATE threads SET score = score + $1 WHERE thread_id = $2;', [threadScore, targetThread]);
 }
 
+const boostKeywords = (keywords, targetThread) => {
+    return Promise.all(keywords.map(word => {
+        return db.none('UPDATE keywords SET relevance = relevance + $1 WHERE thread_id = $2 AND word = $3;', [word.relevance, targetThread, word.text])
+        .catch(console.error)
+    }))
+}
+
 const fetchTopicsAndMerge = (event, context, callback) => {
     const lastCreatedFile = event.Records[0].s3.object.key;
     getKeywords()
@@ -104,4 +111,4 @@ const fetchTopicsAndMerge = (event, context, callback) => {
 
 
 
-module.exports = {fetchTopicsAndMerge, getKeywords, updateThreads};
+module.exports = {fetchTopicsAndMerge, getKeywords, updateThreads, boostKeywords};
