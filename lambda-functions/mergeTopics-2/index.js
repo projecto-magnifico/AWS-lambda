@@ -47,6 +47,17 @@ const addNewThread = (score) => {
     return db.one('INSERT INTO threads (score) VALUES ($1) RETURNING thread_id;', score)
 }
 
+// const addArticles = (articles, targetThread) => {
+//     return Promise.all(articles.map(article => {
+//         db.one('SELECT source_id FROM sources WHERE name = $1', article.source)
+//             .then(source => {
+//                 return db.none('INSERT INTO articles (thread_id, title, description, url, age, source_id, img_url) VALUES ($1, $2, $3, $4, $5, $6, $7);' [targetThread, article.title, article.description, article.url, article.age, source.source_id, article.urlToImage])
+//                 .catch(console.error);
+//             })
+//             .catch(console.error)                    
+//     }));
+// }
+
 const fetchTopicsAndMerge = (event, context, callback) => {
     const lastCreatedFile = event.Records[0].s3.object.key;
     getKeywords()
@@ -121,4 +132,4 @@ const fetchTopicsAndMerge = (event, context, callback) => {
 
 
 
-module.exports = {fetchTopicsAndMerge, getKeywords, updateThreads, boostKeywords, addNewKeywords, addNewThread};
+module.exports = {fetchTopicsAndMerge, getKeywords, updateThreads, boostKeywords, addNewKeywords, addNewThread, addArticles};

@@ -1,4 +1,6 @@
-const { fetchTopicsAndMerge, getKeywords, updateThreads, boostKeywords, addNewKeywords, addNewThread } = require('../../lambda-functions/mergeTopics-2/index');
+
+const { fetchTopicsAndMerge, getKeywords, updateThreads, boostKeywords, addNewKeywords, addNewThread, addArticles} = require('../../lambda-functions/mergeTopics-2/index');
+
 const expect = require('chai').expect;
 const dbConfig = require('../../lambda-functions/mergeTopics-2/config');
 const pgp = require('pg-promise')({ promiseLib: Promise });
@@ -16,7 +18,7 @@ describe('#mergetopicsWithThreads', () => {
             })
             .then(done, done)
             .catch(console.error);
-        db.none(`INSERT INTO sources (name) VALUES
+    db.none(`INSERT INTO sources (name) VALUES
     ('abc-news-au'),
     ('al-jazeera-english'),
     ('associated-press'),
@@ -33,7 +35,7 @@ describe('#mergetopicsWithThreads', () => {
     ('reuters'),
     ('the-telegraph'),
     ('usa-today'),
-    ('the-washington-post');`)
+    ('the-washington-post');`);
     });
     describe('#getKeywords', () => {
         it('returns a promise which resolves to an array of keyword objects', (done) => {
@@ -58,7 +60,7 @@ describe('#mergetopicsWithThreads', () => {
             let threadScore = 0;
             updateThreads(15, 1)
                 .then(() => {
-                    db.one('SELECT * FROM threads WHERE thread_id = 1')
+                    db.one('SELECT * FROM threads WHERE thread_id = 1;')
                         .then((thread) => {
                             threadScore = thread.score;
                             expect(threadScore).to.equal('15.2');
@@ -76,13 +78,35 @@ describe('#mergetopicsWithThreads', () => {
         })
 
         it('updates existing keywords and returns a promise', () => {
-            return db.any('SELECT * FROM keywords') 
+            return db.any('SELECT * FROM keywords;') 
                 .then((data) => {
                     expect(data[0].word).to.equal('Arthur');
                     expect(data[0].relevance).to.equal('1.2');                    
                 })
         });
     });
+    // describe('addArticles', () => {
+    //     before(() => {
+    //         const articles = [
+    //             {thread_id: 1, title: 'Test-Article', description: 'this is an article', url: '##', age: 1, source: 'cnn', urlToImage: 'Test-Url'}
+    //         ]
+    //         return addArticles(articles, 1)
+    //     })
+    //     it('adds new articles to the database and returns a promise', () => {
+    //         return db.any('SELECT * FROM articles;')
+    //             .then(data => {
+        
+    //                 console.log('DATAAAAAAAA', data)
+    //                 expect(data[0].title).to.equal('Test-Article');
+    //                 expect(data[0].description).to.equal('this is an article');
+    //                 expect(data[0].url).to.equal('##');
+    //                 expect(data[0].age).to.equal(1);
+    //                 expect(data[0].source_id).to.equal(5);
+    //                 expect(data[0].image_url).to.equal('Test-Url');
+    //             })
+    //     });
+    // });
+
     describe('#addNewKeywords', () => {
         before(() => {
             const keywords = [{text: 'James', relevance: 0.8}, {text: "Testing", relevance: 0.8}]
@@ -106,5 +130,6 @@ describe('#mergetopicsWithThreads', () => {
 
         });
     });
+
 
 });
