@@ -1,4 +1,4 @@
-const { fetchTopicsAndMerge, getKeywords, updateThreads, boostKeywords } = require('../../lambda-functions/mergeTopics-2/index');
+const { fetchTopicsAndMerge, getKeywords, updateThreads, boostKeywords, addNewKeywords } = require('../../lambda-functions/mergeTopics-2/index');
 const expect = require('chai').expect;
 const dbConfig = require('../../lambda-functions/mergeTopics-2/config');
 const pgp = require('pg-promise')({ promiseLib: Promise });
@@ -80,6 +80,19 @@ describe('#mergetopicsWithThreads', () => {
                 .then((data) => {
                     expect(data[0].word).to.equal('Arthur');
                     expect(data[0].relevance).to.equal('1.2');                    
+                })
+        });
+    });
+    describe('#addNewKeywords', () => {
+        before(() => {
+            const keywords = [{text: 'James', relevance: 0.8}, {text: "Testing", relevance: 0.8}]
+            return addNewKeywords(keywords, 1)
+        })
+        it('adds new keywords to an existing thread', () => {
+            return db.any("SELECT * FROM keywords WHERE word = 'James'")
+                .then(data => {
+                    expect(data[0].word).to.equal('James');
+                    expect(data[0].relevance).to.equal('0.8');
                 })
         });
     });

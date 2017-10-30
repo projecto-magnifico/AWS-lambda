@@ -36,6 +36,12 @@ const boostKeywords = (keywords, targetThread) => {
         .catch(console.error)
     }))
 }
+const addNewKeywords = (keywords, targetThread) => {
+    return Promise.all(keywords.map(word => {
+        return db.none('INSERT INTO keywords (word, thread_id, relevance) VALUES ($1, $2, $3);', [word.text, targetThread, word.relevance])
+        .catch(console.error); 
+    }))
+}
 
 const fetchTopicsAndMerge = (event, context, callback) => {
     const lastCreatedFile = event.Records[0].s3.object.key;
@@ -111,4 +117,4 @@ const fetchTopicsAndMerge = (event, context, callback) => {
 
 
 
-module.exports = {fetchTopicsAndMerge, getKeywords, updateThreads, boostKeywords};
+module.exports = {fetchTopicsAndMerge, getKeywords, updateThreads, boostKeywords, addNewKeywords};
