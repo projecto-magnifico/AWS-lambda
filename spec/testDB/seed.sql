@@ -1,3 +1,4 @@
+DROP DATABASE IF EXISTS jd;
 DROP DATABASE IF EXISTS delphi_test; 
 CREATE DATABASE delphi_test; 
 

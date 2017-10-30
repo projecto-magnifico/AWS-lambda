@@ -1,11 +1,11 @@
-const {fetchTopicsAndMerge, getKeywords} = require('../../lambda-functions/mergeTopics-2/index'); 
+const {fetchTopicsAndMerge, getKeywords, updateThreads} = require('../../lambda-functions/mergeTopics-2/index'); 
 const expect = require('chai').expect;
 const dbConfig = require('../../lambda-functions/mergeTopics-2/config');
-const pgp = require('pg-promise');
-const db = pgp(dbConfig)({promiseLib: Promise});
+const pgp = require('pg-promise')({promiseLib: Promise});
+const db = pgp(dbConfig);
 
 describe('#mergetopicsWithThreads', () => {
-  beforeEach(() => {
+  before((done) => {
     db.none(`INSERT INTO threads (score) VALUES 
     (0.2);`)
     .then(() => {
@@ -14,6 +14,8 @@ describe('#mergetopicsWithThreads', () => {
       ('Hey', 1, 0.22),
       ('Like', 1, 0.1);`);
     })
+    .then(done, done)
+    .catch(console.error);
     db.none(`INSERT INTO sources (name) VALUES
     ('abc-news-au'),
     ('al-jazeera-english'),
@@ -34,7 +36,7 @@ describe('#mergetopicsWithThreads', () => {
     ('the-washington-post');`)
   });
   describe('#getKeywords', () => {
-    it('returns an array of keyword objects', () => {
+    it('returns a promise which resolves to an array of keyword objects', (done) => {
       const keywords = [
         {word: 'Arthur', thread_id: 1},
         {word: 'Hey', thread_id: 1},
@@ -44,6 +46,27 @@ describe('#mergetopicsWithThreads', () => {
       .then(data => {
         expect(data).to.eql(keywords);
       })
+      .then(done, done)
+      .catch(console.error);
+    });
+  });
+  describe('#updateThreads', () => {
+    before(() => {
+      
+    });
+    it('updates the threads table and returns a promise', (done) => {
+      let threadScore = 0;
+      updateThreads(15, 1)
+      .then(() => {
+        db.one('SELECT * FROM threads WHERE thread_id = 1')
+          .then((thread) => {
+            threadScore = thread.score;
+            expect(threadScore).to.equal('15.2');
+          })
+          .then(done, done)
+          .catch(console.error)
+        })
+        .catch(console.error);
     });
   });
 });

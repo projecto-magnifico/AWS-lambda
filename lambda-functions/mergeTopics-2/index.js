@@ -3,10 +3,11 @@ const topicData = require('./spec/topicData');
 const { threadTextAndId2 } = require('./spec/threadData2');
 const AWS = require('aws-sdk');
 const s3 = new AWS.S3();
-const pgp = require('pg-promise');
+const pgp = require('pg-promise')({promiseLib: Promise});
 const bucket = 'topic-storage';
 const dbConfig = require('./config');
-const db = pgp(dbConfig)({promiseLib: Promise});const keywordDecay = 0.6;
+const db = pgp(dbConfig)
+;const keywordDecay = 0.6;
 const keywordsThreshold = 0.12;
 const articlesThreshold = 174;
 const threadDecay = 0.5;
@@ -21,8 +22,12 @@ const mergeTopicsWithThreads = (topics, threadKeywords) => {
     return {insertionSchema, newThreadSchema};
 };
 
-const getKeywords = () => {
-    return db.any('SELECT word, thread_id FROM KEYWORDS;')
+const getKeywords = () => db.any('SELECT word, thread_id FROM KEYWORDS;')
+
+
+const updateThreads = (threadScore, targetThread) => {
+    console.log(`Thread ${targetThread} score updated`);
+    return db.none('UPDATE threads SET score = score + $1 WHERE thread_id = $2;', [threadScore, targetThread]);
 }
 
 const fetchTopicsAndMerge = (event, context, callback) => {
@@ -99,4 +104,4 @@ const fetchTopicsAndMerge = (event, context, callback) => {
 
 
 
-module.exports = {fetchTopicsAndMerge, getKeywords};
+module.exports = {fetchTopicsAndMerge, getKeywords, updateThreads};
