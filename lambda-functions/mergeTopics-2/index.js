@@ -49,6 +49,7 @@ const addNewThread = (score) => {
 
 const fetchTopicsAndMerge = (event, context, callback) => {
     const lastCreatedFile = event.Records[0].s3.object.key;
+    console.log(lastCreatedFile); 
     getKeywords()
         .then(threadKeywords => {
             s3.getObject({Bucket: bucket, Key: lastCreatedFile}, (err, topics) => {

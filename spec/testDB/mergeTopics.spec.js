@@ -7,7 +7,7 @@ const db = pgp(dbConfig);
 describe('#mergetopicsWithThreads', () => {
     before((done) => {
         db.none(`INSERT INTO threads (score) VALUES 
-    (0.2);`)
+        (0.2);`)
             .then(() => {
                 db.none(`INSERT INTO keywords (word, thread_id, relevance) VALUES
       ('Arthur', 1, 0.8),
