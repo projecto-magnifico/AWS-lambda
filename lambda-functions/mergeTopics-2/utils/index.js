@@ -56,7 +56,7 @@ const formulateInsertionSchema = ( topicKeywordSets, threadKeywordSets ) => {
             }
         });
     });
-    return {newThreadSchema, insertionSchema};
+    return {newThreadSchema: newThreadSchema, insertionSchema: insertionSchema};
 };
 
 module.exports = { getKeywordSets, formulateInsertionSchema };

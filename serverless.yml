@@ -8,7 +8,29 @@ provider:
     - "Sid": "Stmt1468366974000"
       "Effect": "Allow"
       "Action": "s3:*"
-      "Resource": ["arn:aws:s3:::topic-storage/*"]
+      "Resource": "*"
+    - "Sid": "VCPPermission"
+      "Effect": "Allow"
+      "Action": "ec2:CreateNetworkInterface"
+      "Resource": ["arn:aws:ec2:::*"]
+    - "Effect": "Allow"
+      "Action": "logs:CreateLogStream"
+      "Resource": [
+                "arn:aws:logs:eu-west-2:675796565283:log-group:/aws/lambda/aws-nodejs-dev-prepareTopics:*",
+                "arn:aws:logs:eu-west-2:675796565283:log-group:/aws/lambda/aws-nodejs-dev-fetchTopicsAndMerge:*"
+            ]
+    - "Effect": "Allow"
+      "Action": "logs:PutLogEvents"
+      "Resource": [
+                "arn:aws:logs:eu-west-2:675796565283:log-group:/aws/lambda/aws-nodejs-dev-prepareTopics:*:*",
+                "arn:aws:logs:eu-west-2:675796565283:log-group:/aws/lambda/aws-nodejs-dev-fetchTopicsAndMerge:*:*"
+            ]
+  environment:
+    DATABASE_HOST: ron-10.c937luppnqvc.eu-west-2.rds.amazonaws.com
+    DATABASE_PORT: 5432
+    DATABASE_NAME: Ron
+    DATABASE_USERNAME: JMD
+    DATABASE_PASSWORD: Locksmith00))
 functions:
   prepareTopics:
     handler: handler.prepareTopics
@@ -22,3 +44,21 @@ functions:
         event: s3:ObjectCreated:*
         rules:
           - suffix: .json
+    vpc:
+      securityGroupIds:
+        - sg-626f960a
+      subnetIds:
+        - subnet-c1d94b8c
+  testLambda:
+    handler: handler.testLambda
+    events:
+      - s3:
+        bucket: topic-storage;
+        event: s3:ObjectCreated:*
+        rules:
+          - suffix: .json
+    vpc:
+      securityGroupIds:
+        - sg-626f960a
+      subnetIds:
+        - subnet-c1d94b8c
