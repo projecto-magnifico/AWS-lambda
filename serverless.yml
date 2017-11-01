@@ -40,7 +40,7 @@ functions:
     handler: handler.fetchTopicsAndMerge
     events:
       - s3:
-        bucket: topic-storage;
+        bucket: topic-storage
         event: s3:ObjectCreated:*
         rules:
           - suffix: .json
@@ -53,7 +53,7 @@ functions:
     handler: handler.testLambda
     events:
       - s3:
-        bucket: topic-storage;
+        bucket: topic-storage
         event: s3:ObjectCreated:*
         rules:
           - suffix: .json
