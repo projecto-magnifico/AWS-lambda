@@ -7,8 +7,8 @@ const pgp = require('pg-promise')({ promiseLib: Promise });
 const bucket = 'topic-storage';
 const dbConfig = require('./config');
 const db = pgp(dbConfig);
-const keywordDecay = 0.6;
-const keywordsThreshold = 0.12;
+const keywordDecay = 0.5;
+const keywordsThreshold = 0.15;
 const articlesThreshold = 174;
 const threadDecay = 0.5;
 
@@ -19,6 +19,14 @@ const mergeTopicsWithThreads = (topics, threadKeywords) => {
     if(schemas.insertionSchema.length > 0){
         schemas.insertionSchema.articles = topics[schemas.insertionSchema[0].fromTopic].articles;
     }
+    schemas.insertionSchema = schemas.insertionSchema.map(insertionObj => {
+        insertionObj.articles = topics[insertionObj.fromTopic].articles;
+        return insertionObj;
+    });
+    console.log('SCHEMAS',schemas);
+    console.log('INSERTION SCHEMAS',schemas.insertionSchema);
+    console.log('NT SCHEMAS',schemas.newThreadSchema);
+
     return schemas;
 };
 
@@ -53,39 +61,51 @@ const fetchTopicsAndMerge = (event, context, callback) => {
         const lastCreatedFile = event.Records[0].s3.object.key.replace(/%3A/g, ':');
         db.any('SELECT word, thread_id FROM keywords;')
             .then(threadKeywords => {
+                const threadKeywordSetsObj = threadKeywords.reduce((acc, tkw) => {
+                    if(acc[tkw.thread_id]){
+                        acc[tkw.thread_id].push(tkw);
+                    }
+                    else{
+                        acc[tkw.thread_id] = [tkw];
+                    };
+                    return acc;
+                }, {})
+                const threadKeywordSets = Object.keys(threadKeywordSetsObj).map((key) => {
+                    return threadKeywordSetsObj[key];
+                })
                 s3.getObject({ Bucket: bucket, Key: lastCreatedFile }, (err, topics) => {
                     if (err) {
                         console.error('THIS IS AN S3 ERROR:', err);
                     }
                     let parsedTopics = JSON.parse(topics.Body.toString("utf8"));
-                    const schemas = mergeTopicsWithThreads(parsedTopics, threadKeywords);
+                    const schemas = mergeTopicsWithThreads(parsedTopics, threadKeywordSets);
                     Promise.all([
-                        schemas.insertionSchema.map(topic => {
-                            const threadScore = parsedTopics[topic.targetThread].score;
+                        schemas.insertionSchema.map((topic, i) => {
+                            console.log('TOPIC SCORE', parsedTopics[topic.fromTopic].score);
                             return Promise.all([
-                                db.none('UPDATE threads SET score = score + $1 WHERE thread_id = $2;', [threadScore, topic.targetThread])
-                                    .then(() => {
-                                        console.log(`Thread ${topic.targetThread} score updated`);
+                                db.one('UPDATE threads SET score = score + $1 WHERE thread_id = $2 RETURNING *;', [parsedTopics[topic.fromTopic].score, topic.targetThread])
+                                    .then((res) => {
+                                        return console.log(`Thread ${topic.targetThread} score updated with ${res.data}`);
                                     })
-                                    .catch(console.error),
+                                    .catch((err) => console.log(err)),
                                 Promise.all(
                                     topic.boostKeywords.map(word => {
                                         return db.none('UPDATE keywords SET relevance = relevance + $1 WHERE thread_id = $2 AND word = $3;', [word.relevance, topic.targetThread, word.text])
-                                            .catch(console.error);
+                                        .catch((err) => console.log(err));
                                     })
                                 ),
                                 Promise.all(
                                     topic.newKeywords.map(word => {
                                         return db.none('INSERT INTO keywords (word, thread_id, relevance) VALUES ($1, $2, $3);', [word.text, topic.targetThread, word.relevance])
-                                            .catch(console.error);
+                                        .catch((err) => console.log(err));                                    
                                     })
                                 ),
                                 Promise.all(
                                     topic.articles.map(article => {
                                     return db.one('SELECT source_id FROM sources WHERE name = $1;', article.source)
                                         .then(source => {
-                                            return db.none('INSERT INTO articles (thread_id, title, description, url, age, source_id, img_url) VALUES ($1, $2, $3, $4, $5, $6, $7);',[topic.targetThread, article.title, article.description, article.url, article.age, source.source_id, article.urlToImage])
-                                                .catch(console.error);
+                                            return db.none('INSERT INTO articles (thread_id, title, description, url, age, source_id, image_url) VALUES ($1, $2, $3, $4, $5, $6, $7);',[topic.targetThread, article.title, article.description, article.url, article.age, source.source_id, article.urlToImage])
+                                            .catch((err) => console.log(err));                                        
                                         })
                                     })
                                 )
@@ -101,35 +121,35 @@ const fetchTopicsAndMerge = (event, context, callback) => {
                                                 .then((source) => {
                                                     return db.none('INSERT INTO articles (thread_id, title, description, url, age, source_id, image_url) VALUES ($1, $2, $3, $4, $5, $6, $7);',[thread.thread_id, article.title, article.description, article.url, article.age, source.source_id, article.urlToImage])
                                                 })
-                                                .catch(console.error);
-                                        }),
+                                                .catch((err) => console.log(err));                                        
+                                            }),
                                         parsedTopics[i].keywords.map(keyword => {
                                             return db.none('INSERT INTO keywords (word, thread_id, relevance) VALUES ($1, $2, $3);', [keyword.text, thread.thread_id, keyword.relevance])
                                         })
                                     ])
                                 })
-                                .catch(console.error);
-                        })
+                                .catch((err) => console.log(err));                        
+                            })
                     ])
                     .then(() => {
                         Promise.all([
                             db.none('UPDATE articles SET age = age + 1;')
-                            .catch(console.error),
+                            .catch((err) => console.log(err)),
                             db.none('UPDATE threads SET score = score * $1;', [threadDecay])
-                            .catch(console.error),
+                            .catch((err) => console.log(err)),
                             db.none('UPDATE keywords SET relevance = relevance * $1;', [keywordDecay])
-                            .catch(console.error)
+                            .catch((err) => console.log(err))
                         ])
                     })
                     .then(() => {
                         db.none('DELETE FROM articles WHERE age >= $1;', articlesThreshold)
-                        .catch(console.error);
+                        .catch((err) => console.log(err));
                         db.none('DELETE FROM keywords WHERE relevance <= $1;', keywordsThreshold)
-                        .catch(console.error);
-                        console.log('***** Database update complete *****')
+                        .catch((err) => console.log(err));
+                        console.log('***** Database update complete *****') 
                     })
+                    .catch((err) => console.log(err));
                 })
-                .catch(console.error);
             })
     // }, 4000)
 }

@@ -34,12 +34,12 @@ const formulateInsertionSchema = ( topicKeywordSets, threadKeywordSets ) => {
     let newThreadSchema = [];
     topicKeywordSets.forEach((topicKeywords,i) => {
         newThreadSchema.push(i);
-        threadKeywordSets.forEach((threadKeywords) => {
+        threadKeywordSets.forEach((threadKeywordSet) => {
             let topicKeywordsText = _.pluck(topicKeywords,'text');
-            let threadKeywordsText = _.pluck(threadKeywords,'word');
+            let threadKeywordsText = threadKeywordSet.map(tks => tks.word);
             let intersection = _.uniq(_.intersection(topicKeywordsText,threadKeywordsText));
             let difference = _.uniq(_.difference(topicKeywordsText,threadKeywordsText));
-            if (intersection.length > 3) {
+            if (intersection.length > 6) {
                 let intersectedWordObjects = topicKeywordSets[i].filter(wordObject => {
                     return _.contains(intersection, wordObject.text);
                 });
@@ -47,7 +47,7 @@ const formulateInsertionSchema = ( topicKeywordSets, threadKeywordSets ) => {
                     return _.contains(difference, wordObject.text);
                 });
                 insertionSchema.push({
-                    targetThread: threadKeywords[0].thread_id,
+                    targetThread: threadKeywordSet[0].thread_id,
                     fromTopic: i,
                     boostKeywords : intersectedWordObjects,
                     newKeywords : differentWordObjects
