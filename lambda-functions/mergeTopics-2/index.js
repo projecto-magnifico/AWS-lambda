@@ -9,7 +9,7 @@ const dbConfig = require('./config');
 const db = pgp(dbConfig);
 const keywordDecay = 0.5;
 const keywordsThreshold = 0.15;
-const articlesThreshold = 174;
+const articlesThreshold = 56;
 const threadDecay = 0.5;
 
 const mergeTopicsWithThreads = (topics, threadKeywords) => {
@@ -81,11 +81,11 @@ const fetchTopicsAndMerge = (event, context, callback) => {
                     const schemas = mergeTopicsWithThreads(parsedTopics, threadKeywordSets);
                     Promise.all([
                         schemas.insertionSchema.map((topic, i) => {
-                            console.log('TOPIC SCORE', parsedTopics[topic.fromTopic].score);
+                            console.log('PARSED', parsedTopics);
                             return Promise.all([
                                 db.one('UPDATE threads SET score = score + $1 WHERE thread_id = $2 RETURNING *;', [parsedTopics[topic.fromTopic].score, topic.targetThread])
                                     .then((res) => {
-                                        return console.log(`Thread ${topic.targetThread} score updated with ${res.data}`);
+                                        return console.log(`Thread ${topic.targetThread} score updated`);
                                     })
                                     .catch((err) => console.log(err)),
                                 Promise.all(
@@ -117,11 +117,22 @@ const fetchTopicsAndMerge = (event, context, callback) => {
                                 .then((thread) => {
                                     Promise.all([
                                         parsedTopics[i].articles.map(article => {
-                                            return db.one('SELECT source_id FROM sources WHERE name = $1;', article.source)
-                                                .then((source) => {
-                                                    return db.none('INSERT INTO articles (thread_id, title, description, url, age, source_id, image_url) VALUES ($1, $2, $3, $4, $5, $6, $7);',[thread.thread_id, article.title, article.description, article.url, article.age, source.source_id, article.urlToImage])
+                                            console.log('ARTICLE', article);
+                                            return db.any('SELECT url FROM articles WHERE url = $1;', article.url)
+                                                .then(res => {
+                                                    console.log(res);
+                                                    if (res.length === 0) {
+                                                        return db.one('SELECT source_id FROM sources WHERE name = $1;', article.source)
+                                                            .then((source) => {
+                                                                return db.none('INSERT INTO articles (thread_id, title, description, url, age, source_id, image_url) VALUES ($1, $2, $3, $4, $5, $6, $7);',[thread.thread_id, article.title, article.description, article.url, article.age, source.source_id, article.urlToImage])
+                                                            })
+                                                            .catch((err) => console.log(err));                                        
+                                                    }
+                                                    else{ 
+                                                        return db.none('UPDATE articles SET age = 0 WHERE url = $1;', res.url)
+                                                            .catch((err) => console.log(err));                                        
+                                                    }
                                                 })
-                                                .catch((err) => console.log(err));                                        
                                             }),
                                         parsedTopics[i].keywords.map(keyword => {
                                             return db.none('INSERT INTO keywords (word, thread_id, relevance) VALUES ($1, $2, $3);', [keyword.text, thread.thread_id, keyword.relevance])
